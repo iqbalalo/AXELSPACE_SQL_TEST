@@ -1,14 +1,8 @@
-from .dbtest import (
-    DbTest,
-    dbconnect
-)
-
 import os
-from psycopg2.extras import (
-    RealDictCursor,
-    RealDictRow
-)
 
+from psycopg2.extras import RealDictCursor, RealDictRow
+
+from .dbtest import DbTest, dbconnect
 
 PATH_TO_SQL_DIR = os.path.abspath(
     os.path.join(
@@ -43,6 +37,10 @@ class TestExample(DbTest):
         )
 
         sql = """
+        SELECT COUNT(esec.customer_organization_id) subordinates_count, o.id FROM organizations o
+        LEFT JOIN enterprise_sales_enterprise_customers esec ON o.id = esec.sales_organization_id
+        GROUP BY o.id
+        ORDER BY o.id
         """
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql)
@@ -87,8 +85,7 @@ class TestExample(DbTest):
             os.path.join(PATH_TO_SQL_DIR, "japan_segments.sql")
         )
 
-        sql = """
-        """
+        sql = "SELECT id, ST_X(st_centroid(bounds)) longitude, ST_Y(st_centroid(bounds)) latitude FROM japan_segments;"
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql)
             actual = cur.fetchall()
@@ -155,6 +152,37 @@ class TestExample(DbTest):
         )
 
         sql = """
+        select id from japan_segments js where 
+            ST_Within(bounds, ST_SetSRID(ST_GeomFromGeoJSON('
+                {
+                    "type": "Polygon",
+                    "coordinates": [
+                    [
+                        [
+                        130.27313232421875,
+                        30.519681272749402
+                        ],
+                        [
+                        131.02020263671875,
+                        30.519681272749402
+                        ],
+                        [
+                        131.02020263671875,
+                        30.80909017893796
+                        ],
+                        [
+                        130.27313232421875,
+                        30.80909017893796
+                        ],
+                        [
+                        130.27313232421875,
+                        30.519681272749402
+                        ]
+                    ]
+                    ]
+                }
+            '),4326)   
+            ) is true;
         """
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(sql)
